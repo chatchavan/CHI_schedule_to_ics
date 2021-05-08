@@ -9,13 +9,12 @@ library(calendar)
 
 # input files
 path_schedule_csv <- "input/CHI2021_my_schedule.csv"
-path_program_json <- "input/CHI_2021_program.json"
+
 
 # exclusion
 exclude_before_ymd <- "2021-05-08"
 
 # time zones
-tz_chi_program_json <- "UTC"
 tz_source <- "Asia/Tokyo"
 tz_target <- "Europe/Zurich"
 
@@ -27,40 +26,14 @@ ical_description_template <-
   {my_note}
   "
 
+df_sessions <- read_rds("data/df_sessions.RDS")
+df_contents <- read_rds("data/df_contents.RDS")
+
 #===============================================================================
-# prepare data form the whole CHI program (needed to grab DOI and broadcast link)
+# process the exported schedule
 
-chi_program <- jsonlite::fromJSON(path_program_json)
-
-df_timeslots <- 
-  as_tibble(chi_program$timeSlots) %>% 
-  rename_with(to_snake_case) %>% 
-  mutate(across(ends_with("_date"), ~(.x+0.1) / 1000)) %>% 
-  mutate(across(ends_with("_date"), ~as_datetime(.x, tz = tz_chi_program_json))) %>%
-  mutate(across(ends_with("_date"), ~force_tz(.x, tz_source)))
-
-df_sessions <-
-  as_tibble(chi_program$sessions) %>% 
-  rename_with(to_snake_case) %>% 
-  select(session_name = name, broadcast_link, time_slot_id, content_ids) %>%
-  mutate(broadcast_link = .$broadcast_link$url) %>% 
-  left_join(df_timeslots, by = c("time_slot_id" = "id")) %>% 
-  unnest(content_ids, keep_empty = TRUE) %>% 
-  select(-type, -time_slot_id)
 tidy_schedule <- function(path_schedule_csv, tz_target) {
   
-
-df_contents <-
-  as_tibble(chi_program$contents) %>% 
-  rename_with(to_snake_case) %>%
-  select(id, content_title = title, doi, abstract, videos) %>% 
-  left_join(df_sessions, by = c("id" = "content_ids")) %>% 
-  select(content_title, session_name, start_date, end_date, broadcast_link, doi)
-
-
-#===============================================================================
-# process the exporteds schedule
-
   df_chi_export <- 
     read_csv(path_schedule_csv, col_types = "cccc___c") %>% 
     rename_with(to_snake_case) %>% 
