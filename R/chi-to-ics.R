@@ -86,37 +86,44 @@ df_schedule_src <-
   select(-ends_with(".y"))
   
 
-df_ics <-
+df_target_tz_filtered <-
   df_schedule_src %>% 
   # convert to the target timezone
   mutate(across(ends_with("_date"), ~with_tz(.x, tz_target), .names = "{.col}_target")) %>% 
   
   # exclude entries before a specified date
-  filter(start_date > ymd(exclude_before_ymd)) %>% 
+  filter(start_date_target > ymd(exclude_before_ymd))
   
-  # prepare data for ical
-  mutate(
-    ical_title = if_else(!is.na(content_title), content_title, session_name),
-    ical_url = broadcast_link,
-    ical_description = str_glue(ical_description_template, .na = "-")) %>%
-  select(start_date_target, end_date_target, ical_title, ical_url, ical_description) %>% 
-  
-  # create ical object
-  mutate(ical_obj = pmap(.,function(start_date_target, end_date_target, ical_title, ical_url, ical_description){
-    ical_obj <- ic_event(start_time = start_date_target,
-                         end_time = end_date_target,
-                         summary = ical_title)
-    ical_obj$DESCRIPTION <- str_replace_all(ical_description, fixed("\n"), fixed("\\n"))
-    ical_obj$URL <- ical_url
+
+write_ics <- function(chi_df, path_output) {
+  df_ics <- 
+    chi_df %>% 
+    mutate(
+      ical_title = if_else(!is.na(content_title), content_title, session_name),
+      ical_url = broadcast_link,
+      ical_description = str_glue(ical_description_template, .na = "-")) %>%
+    select(start_date_target, end_date_target, ical_title, ical_url, ical_description) %>% 
     
-    ical_obj
-  }))
+    # create ical object
+    mutate(ical_obj = pmap(.,function(start_date_target, end_date_target, ical_title, ical_url, ical_description){
+      ical_obj <- ic_event(start_time = start_date_target,
+                           end_time = end_date_target,
+                           summary = ical_title)
+      ical_obj$DESCRIPTION <- str_replace_all(ical_description, fixed("\n"), fixed("\\n"))
+      ical_obj$URL <- ical_url
+      ical_obj
+    }))
   
-# generate ics text format
-df_ics %>% 
-  pull(ical_obj) %>% 
-  bind_rows() %>% 
-  ic_character() %>% 
-  str_flatten("\n") %>% 
-  write_file("output/all_schedule.ics")
+  # generate ics text format
+  df_ics %>% 
+    pull(ical_obj) %>% 
+    bind_rows() %>% 
+    ic_character() %>% 
+    str_flatten("\n") %>% 
+    write_file(path_output)
+}
   
+  
+  
+df_target_tz_filtered %>%   
+  write_ics("output/all_schedule.ics")
