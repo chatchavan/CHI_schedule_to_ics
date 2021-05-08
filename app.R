@@ -2,12 +2,17 @@ library(shiny)
 library(readr)
 # library(shinyjs)
 
+common_tzs <- c(
+    "Europe/Zurich"
+)
+    
 
 ui <- fluidPage(
     titlePanel("Convert your exported CHI 2021 schedule to iCal"),
     fixedPage(
-        selectInput("timezone", "Choose target time zone:",
-                    choices = OlsonNames()),
+        includeHTML("www/instruction.html"),
+        selectInput("timezone", "Choose your time zone:",
+                    choices = c(common_tzs, OlsonNames())),
         fileInput("file1", "Choose CSV File exported from the CHI program",
                   multiple = FALSE,
                   accept = c("text/csv",
@@ -15,7 +20,8 @@ ui <- fluidPage(
                              ".csv")),
         selectInput("ics", "Choose .ics to download:",
                 choices = NA),
-        downloadButton("download", "Download")
+        downloadButton("download", "Download"),
+        includeHTML("www/footer.html")
     )
 )
 

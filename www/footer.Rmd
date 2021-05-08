@@ -1,0 +1,15 @@
+---
+output: html_document
+---
+
+
+
+
+
+--------
+
+Have a great CHI!
+
+Source code: https://github.com/chatchavan/CHI_schedule_to_ics
+
+Author: [Chat Wacharamanotham](http://twitter.com/chatchavan) (is on the job market, by the way)

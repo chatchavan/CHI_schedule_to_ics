@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 output
+www/footer.html
+www/instruction.html
