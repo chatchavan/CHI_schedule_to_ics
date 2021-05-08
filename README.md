@@ -1,4 +1,4 @@
-#Convert your exported CHI 2021 schedule to iCal
+# Convert your exported CHI 2021 schedule to iCal
 by [Chat Wacharamanotham](http://twitter.com/chatchavan)
 
 Use it on Shiny server: https://chatchavan.shinyapps.io/CHI-Schedule-to-ICS/
