@@ -85,14 +85,10 @@ df_schedule_src <-
   filter(abs(start_date - start_date.y) < 360)  %>% # remove the entries that has the start time differs more than 360 seconds
   select(-ends_with(".y"))
   
-
-df_target_tz_filtered <-
+# convert to the target timezone
+df_target_tz <-
   df_schedule_src %>% 
-  # convert to the target timezone
-  mutate(across(ends_with("_date"), ~with_tz(.x, tz_target), .names = "{.col}_target")) %>% 
-  
-  # exclude entries before a specified date
-  filter(start_date_target > ymd(exclude_before_ymd))
+  mutate(across(ends_with("_date"), ~with_tz(.x, tz_target), .names = "{.col}_target"))
   
 
 write_ics <- function(chi_df, path_output) {
@@ -125,5 +121,18 @@ write_ics <- function(chi_df, path_output) {
   
   
   
-df_target_tz_filtered %>%   
+df_target_tz %>%   
   write_ics("output/all_schedule.ics")
+
+df_target_tz %>%   
+  filter(start_date_target > ymd(exclude_before_ymd)) %>% 
+  write_ics("output/filtered_schedule.ics")
+
+df_target_tz %>%   
+  mutate(start_ymd = str_c(year(start_date_target), month(start_date_target), day(start_date_target), sep = "-")) %>%
+  nest(schedule = !start_ymd) %>% 
+  pwalk(function(start_ymd , schedule) {
+    path_ics <- file.path("output", sprintf("%s.ics", start_ymd))
+    schedule %>% 
+      write_ics(path_ics)
+  })
